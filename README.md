@@ -17,7 +17,7 @@ SCHEDULER_AUTHKEY=a_very_cool_key#This key is used to authenticate requests from
 LOG_LEVEL=INFO#May be DEBUG, INFO, WARNING, ERROR
 ```
 > [!CAUTION]
-> CAREFUL: The `DATABASE_URL` is used to connect to an **alreay initialized** Iglu Cache Database. The scheduler will not initialize the database for you, so make sure you have a running Iglu Cache Database before starting the scheduler.
+> CAREFUL: The `DATABASE_URL` is used to connect to an **alreay initialized** Iglu Cache Database. The scheduler will not initialize the database for you, so make sure you have a running Iglu Cache Database and that you've run the **iglu-controller** at least once before starting the scheduler.
 
 You can then run the scheduler with the following command:
 ```bash
