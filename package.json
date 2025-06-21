@@ -1,0 +1,20 @@
+{
+  "name": "scheduler",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@iglu-sh/logger": "^1.0.2-3",
+    "@types/dockerode": "^3.3.41",
+    "@types/pg": "^8.15.4",
+    "dockerode": "^4.0.7",
+    "dotenv": "^16.5.0",
+    "pg": "^8.16.2"
+  }
+}
