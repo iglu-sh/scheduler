@@ -9,6 +9,10 @@
   "peerDependencies": {
     "typescript": "^5"
   },
+  "scripts": {
+    "dev": "bun --hot run index.ts",
+    "start": "bun run index.ts"
+  },
   "dependencies": {
     "@iglu-sh/logger": "^1.0.2-3",
     "@types/dockerode": "^3.3.41",
