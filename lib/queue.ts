@@ -4,6 +4,7 @@ import Database from "@/lib/db";
 import Docker from "dockerode";
 import {start} from "@/lib/docker/start";
 import Logger from "@iglu-sh/logger";
+import {createClient, type RedisClientType} from "redis";
 /*
 * This function is responsible for managing the queue of builders to be started.
 * It checks if there is space for more builders, and if so, it starts the next builder in the queue.
@@ -87,4 +88,18 @@ export async function queueBuild(
 
     // Refresh the queue to start the next builder if there is space
     return {runID: runID, queue:queue};
+}
+
+
+export class Queue{
+    private client: RedisClientType;
+
+
+    constructor(){
+        this.client = createClient({
+            url: "redis://localhost:6379",
+            password: "verysecret",
+            username: "default"
+        })
+    }
 }

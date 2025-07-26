@@ -20,10 +20,13 @@ import builderStartup from "@/lib/docker/builderStartup";
 import end from './lib/docker/end';
 import builder from "@/lib/build/builder";
 import refreshQueue, {queueBuild} from "@/lib/queue";
+import type {healthCheckResponse} from "@/types/api.ts";
 
 const INTERFACE = process.env.SCHEDULER_INTERFACE
 const PORT = process.env.SCHEDULER_PORT || '3000';
-const KEY = process.env.SCHEDULER_AUTHKEY;
+// Generate a random key for the scheduler
+// This key must be sent in the Authorization header of the requests to the scheduler
+const KEY = process.env.SCHEDULER_KEY || Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 const DOCKER = new Docker({
     socketPath: process.env.DOCKER_SOCKET || '/var/run/docker.sock'
 })
@@ -31,13 +34,14 @@ const EVENT_EMITTER = new event.EventEmitter();
 const DB = new Database()
 const LOG_LEVEL = process.env.LOG_LEVEL || 'INFO';
 const LOG_JSON = process.env.LOG_JSON === 'true' || false;
-
+const STARTED_DATE = new Date()
 // Initialize the logger
 Logger.setPrefix('[SCHEDULER]', 'RED');
 Logger.setLogLevel(LOG_LEVEL as 'DEBUG' | 'INFO' | 'WARN' | 'ERROR');
 Logger.setJsonLogging(LOG_JSON);
 Logger.info("Logger initialized with level: " + LOG_LEVEL);
 
+Logger.debug(`Using key: ${KEY}`);
 DOCKER.info().catch((error)=>{
     console.log(error)
     Logger.error('Docker is not running or the socket path is incorrect. Please check your Docker installation and the SCHEDULER_DOCKER_SOCKET environment variable.');
@@ -200,7 +204,6 @@ const isAuthenticated = (req:BunRequest) => {
 
     let token = authHeader ? authHeader.split(' ')[1] : authKeyURLParam;
 
-
     return token === KEY
 }
 
@@ -210,6 +213,25 @@ Bun.serve({
     routes: {
         '/': async (req) => {
             return new Response('Scheduler is running', { status: 200 });
+        },
+
+        '/api/v1/health': async (req) => {
+            if(!isAuthenticated(req)){
+                return new Response('Unauthorized', { status: 401 });
+            }
+            // Return the health status of the scheduler
+            const uptime = Math.floor((Date.now() - STARTED_DATE.getTime()) / 1000);
+            const healthStatus:healthCheckResponse = {
+                status: 'OK',
+                uptime: uptime,
+                version: '1.0.0',
+                arch: process.arch,
+                os: process.platform,
+            };
+            return new Response(JSON.stringify(healthStatus), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' },
+            });
         },
         /*
         * API Endpoint to refresh available builders

@@ -7,18 +7,20 @@
     "@types/bun": "latest"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5.8.3"
   },
   "scripts": {
     "dev": "bun --hot run index.ts",
     "start": "bun run index.ts"
   },
   "dependencies": {
-    "@iglu-sh/logger": "^1.0.2-3",
-    "@types/dockerode": "^3.3.41",
+    "@iglu-sh/logger": "^1.0.4",
+    "@iglu-sh/types": "^0.0.15",
+    "@types/dockerode": "^3.3.42",
     "@types/pg": "^8.15.4",
     "dockerode": "^4.0.7",
-    "dotenv": "^16.5.0",
-    "pg": "^8.16.2"
+    "dotenv": "^16.6.1",
+    "pg": "^8.16.3",
+    "redis": "^5.6.1"
   }
 }
