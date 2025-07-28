@@ -17,17 +17,22 @@ export async function startup(){
         INTERFACE: z.string().optional().default('localhost'),
         AUTH_TOKEN: z.string().optional().default(Bun.randomUUIDv7()),
         NODE_NAME: z.string().optional().default('scheduler'),
-        MAX_BUILDS: z.number().optional().default(5),
+        MAX_BUILDS: z.string().optional().default('5'),
         CONTROLLER_REGISTRATION_KEY: z.string(),
         LOG_LEVEL: z.enum(["DEBUG", "INFO", "WARN", "ERROR"]).optional().default('DEBUG'),
+        LOGGER_FORMAT: z.enum(["pretty", "json"]).optional().default('pretty'),
         CONTROLLER_URL: z.string(), //The base url of the controller (e.g 'http://localhost:3000'). URLs will be constructed from this
-        REDIS_URL: z.string(),
+        REDIS_HOST: z.string(),
+        REDIS_USER: z.string().optional().default('default'),
+        REDIS_PASSWORD: z.string(),
+        REDIS_PORT: z.string().optional().default('6379'),
     });
     const env = envSchema.safeParse(process.env);
     if (!env.success) {
         Logger.error(`Invalid environment variables: ${env.error.message}`);
         throw new Error("Invalid environment variables");
     }
+    Logger.setJsonLogging(env.data.LOGGER_FORMAT === 'json')
     Logger.debug("Environment variables are valid");
 
     Logger.setPrefix(process.env.NODE_NAME!, 'MAGENTA')
@@ -44,13 +49,13 @@ export async function startup(){
         node_version: 'unknown', // This should be set to the version of the scheduler
         node_arch: process.arch,
         node_os: process.platform,
-        node_max_jobs: env.data.MAX_BUILDS
+        node_max_jobs: parseInt(env.data.MAX_BUILDS)
     }
-    const controllerResponse:nodeRegistrationResponse = await fetch(`${env.data.CONTROLLER_URL}/api/v1/nodes/register`, {
+    const controllerResponse:nodeRegistrationResponse = await fetch(`${env.data.CONTROLLER_URL}/api/v1/node/register`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${env.data.CONTROLLER_REGISTRATION_KEY}`
+            'Authorization': `${env.data.CONTROLLER_REGISTRATION_KEY}`
         },
         body: JSON.stringify(registrationBody)
     }).then((res)=>{

@@ -24,10 +24,10 @@ Logger.debug('Listening for builds and on the node channel...')
 
 // Setup Redis clients for editor and subscriber
 const editor = redis.createClient({
-    url: env.REDIS_URL
+    url: `redis://${env.REDIS_USER}:${env.REDIS_PASSWORD}@${env.REDIS_HOST}:${env.REDIS_PORT}/0`,
 })
 const subscriber = redis.createClient({
-    url: env.REDIS_URL
+    url: `redis://${env.REDIS_USER}:${env.REDIS_PASSWORD}@${env.REDIS_HOST}:${env.REDIS_PORT}/0`,
 });
 
 // Handle Redis connection errors
@@ -37,13 +37,24 @@ editor.on('error', (err:Error)=>{
 subscriber.on('error', (err:Error)=>{
     Logger.error(`Redis subscriber error: ${err.message}`);
 });
+
+// Handle Process exit to close Redis connections gracefully
+process.on('SIGINT', async ()=>{
+    Logger.info('SIGINT received, closing Redis connections...');
+    await editor.quit();
+    await subscriber.quit();
+    Logger.info('Redis connections closed, exiting process.');
+    process.exit(0);
+});
+
+// Subscribe to both channels
 subscriber.on('connect', async ()=>{
     Logger.info('Connected to Redis subscriber');
-
     // Subscribe to the node channel
     await subscriber.subscribe('node', (message:string)=>{
         Logger.debug(`Received ${message} on node channel`);
     })
+    await editor.publish('node', 'Hello World!')
     // Subscribe to the build channel
     await subscriber.subscribe('build', (message:string)=>{
         Logger.debug(`Received ${message} on build channel`);
@@ -59,3 +70,4 @@ await subscriber.connect().catch((err:Error)=>{
     Logger.error(`Failed to connect Redis subscriber: ${err.message}`);
     process.exit(1);
 });
+

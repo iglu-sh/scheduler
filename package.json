@@ -10,7 +10,7 @@
     "typescript": "^5.8.3"
   },
   "scripts": {
-    "dev": "bun --hot run index.ts",
+    "dev": "bun --hot run rewrite.ts",
     "start": "bun run index.ts"
   },
   "dependencies": {
