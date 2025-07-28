@@ -1,6 +1,7 @@
 import Logger from "@iglu-sh/logger";
 import {z} from 'zod'
 import type {nodeRegistrationRequest, nodeRegistrationResponse} from "@iglu-sh/types/scheduler";
+import {createClient} from "redis";
 
 /*
 * This file is responsible for starting the scheduler.
@@ -72,10 +73,36 @@ export async function startup(){
     Logger.info(`Node registered with controller. ID of this node: ${controllerResponse.node_id}`);
     Logger.debug(`Node registration response: ${JSON.stringify(controllerResponse)}`);
 
+    // Insert ourselves into redis
+    Logger.debug("Inserting node into Redis...");
+    const editor = createClient({
+        url: `redis://${env.data.REDIS_USER}:${env.data.REDIS_PASSWORD}@${env.data.REDIS_HOST}:${env.data.REDIS_PORT}/0`
+    });
+    editor.on('error', (err:Error)=>{
+        Logger.error(`Redis editor error: ${err.message}`);
+    });
+    await editor.connect();
+    if(!editor.isOpen){
+        Logger.error('Failed to connect to Redis editor');
+        throw new Error('Failed to connect to Redis editor');
+    }
+    Logger.debug('Connected to Redis editor');
+    // Insert the node into Redis
+    await editor.json.set(`node:${controllerResponse.node_id}`, "$", registrationBody).catch((err:Error)=>{
+        Logger.error(`Failed to insert node into Redis: ${err.message}`);
+        throw new Error(`Failed to insert node into Redis: ${err.message}`);
+    });
+    await editor.quit().catch((err:Error)=>{
+        Logger.error(`Failed to close Redis editor connection: ${err.message}`);
+        throw new Error(`Failed to close Redis editor connection: ${err.message}`);
+    })
+    Logger.debug("Node inserted into Redis");
+
     // All done, return the environment variables and the node_id
     return {
         env: env.data,
         node_id: controllerResponse.node_id,
-        node_psk: registrationBody.node_psk
+        node_psk: registrationBody.node_psk,
+        node_data:registrationBody
     }
 }
