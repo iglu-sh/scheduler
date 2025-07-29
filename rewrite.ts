@@ -1,9 +1,11 @@
 import Logger from "@iglu-sh/logger";
 import type {healthCheckResponse} from "@iglu-sh/types/scheduler";
-import redis from "redis";
+import redis, {type RedisClientType} from "redis";
+import Docker from "dockerode";
 import {z} from 'zod'
 import {startup} from "@/lib/startup.ts";
-import type {NodeChannelMessage} from "@iglu-sh/types/controller";
+import type {BuildChannelMessage, NodeChannelMessage} from "@iglu-sh/types/controller";
+import {registerDockerEvents} from "@/lib/docker/events.ts";
 const PORT = process.env.PORT || '3000';
 const INTERFACE = process.env.INTERFACE || "127.0.0.1"
 const STARTED_DATE = new Date();
@@ -127,6 +129,7 @@ subscriber.on('connect', async ()=>{
                     env = newEnv.env;
                     node_id = newEnv.node_id;
                     node_data = newEnv.node_data;
+                    Logger.info(`Scheduler restarted successfully with new NodeID: ${node_id}`);
                 }).catch((err:Error)=>{
                     Logger.error(`Failed to restart scheduler: ${err.message}`);
                     process.exit(1);
@@ -139,6 +142,23 @@ subscriber.on('connect', async ()=>{
     // Subscribe to the build channel
     await subscriber.subscribe('build', (message:string)=>{
         Logger.debug(`Received ${message} on build channel`);
+        const parsedMsg = JSON.parse(message);
+        const schema = z.custom<BuildChannelMessage>()
+        const result = schema.safeParse(parsedMsg);
+        if(!result.success){
+            Logger.error(`Invalid message received on build channel: ${result.error.message}`);
+            return;
+        }
+        const buildMessage:BuildChannelMessage = result.data;
+
+        // TODO: Implement build claiming logic
+
+        // Null means that the message is for all nodes
+        if(buildMessage.target !== node_id && buildMessage.target !== null){
+            Logger.debug(`Build message not targeted at this node, ignoring`);
+            return;
+        }
+        Logger.info(`Received build message: ${JSON.stringify(buildMessage)}`);
     })
 })
 
@@ -154,3 +174,13 @@ await subscriber.connect().catch((err:Error)=>{
 
 // Insert the node information into Redis
 await editor.json.set(`node:${node_id}`, "$", node_data);
+
+/*
+* At this point, the scheduler is ready to handle healthchecks, deregistrations, and build messages.
+* Next up is to create the Dockerode instance and listen for messages / docker events
+* */
+const DockerClient = new Docker({
+    socketPath: env.DOCKER_SOCKET
+})
+registerDockerEvents(DockerClient, editor as RedisClientType, node_id)
+Logger.info(`Scheduler startup complete, listening on redis channels`)

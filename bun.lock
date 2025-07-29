@@ -5,7 +5,7 @@
       "name": "scheduler",
       "dependencies": {
         "@iglu-sh/logger": "^1.0.4",
-        "@iglu-sh/types": "^0.1.1",
+        "@iglu-sh/types": "^0.1.2",
         "@types/dockerode": "^3.3.42",
         "@types/pg": "^8.15.4",
         "dockerode": "^4.0.7",
@@ -31,7 +31,7 @@
 
     "@iglu-sh/logger": ["@iglu-sh/logger@1.0.4", "", { "dependencies": { "@types/chalk": "^2.2.4", "@types/node": "^24.0.10", "chalk": "^5.4.1" }, "peerDependencies": { "typescript": "^5.8.3" } }, "sha512-uytsgoQzBLtS7O6ok+WirJvjSRfmCsO1TyAllr6Z8MEuy1X2dhdLBWPwT7goUpc83I74FzVkAD6Smeck0pKVfg=="],
 
-    "@iglu-sh/types": ["@iglu-sh/types@0.1.1", "", { "peerDependencies": { "typescript": "^5.8.3" } }, "sha512-GV8JtA4tn1XvOgwjtp0CdRnjVI5XbyQ0UTMfj2BL2IN/kgzFWQmXA1xkNOYHj9ti9dIUqWzpmTdAmlQBC8Bjjw=="],
+    "@iglu-sh/types": ["@iglu-sh/types@0.1.2", "", { "peerDependencies": { "typescript": "^5.8.3" } }, "sha512-qyxz+pDtbBmUtmC74aMMfCuHWNyhpiO41Hx326IjXmyElP1Dk9aEL5C9RuI4O/VO8J6IIL1CQ3OZP9Glsf+MKA=="],
 
     "@js-sdsl/ordered-map": ["@js-sdsl/ordered-map@4.4.2", "", {}, "sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw=="],
 

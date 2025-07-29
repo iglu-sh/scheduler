@@ -182,7 +182,9 @@ async function addBuildToQueue(id:number){
 
 
 // Attach to the docker events and set the callback to the dockerEventCallback Function
-DOCKER.getEvents(async (err, data) => {await dockerEventCallback(err, data, getRunningBuilders, builderStartedCallback)})
+DOCKER.getEvents(async (err, data) => {
+    await dockerEventCallback(err, data, getRunningBuilders, builderStartedCallback)
+})
 
 // Get the initial builder configs from the database
 async function initializeBuilders() {

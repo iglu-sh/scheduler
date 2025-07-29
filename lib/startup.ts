@@ -27,6 +27,7 @@ export async function startup(){
         REDIS_USER: z.string().optional().default('default'),
         REDIS_PASSWORD: z.string(),
         REDIS_PORT: z.string().optional().default('6379'),
+        DOCKER_SOCKET: z.string()
     });
     const env = envSchema.safeParse(process.env);
     if (!env.success) {
