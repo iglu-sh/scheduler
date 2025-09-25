@@ -4,6 +4,7 @@ import redis, {type RedisClientType} from "redis";
 import Docker from "dockerode";
 import {z} from 'zod'
 import {startup} from "@/lib/startup.ts";
+import processMessage from "@/lib/messages/buildMessageHandler.ts";
 import type {BuildChannelMessage, NodeChannelMessage} from "@iglu-sh/types/controller";
 import {registerDockerEvents} from "@/lib/docker/events.ts";
 const PORT = process.env.PORT || '3000';
@@ -140,25 +141,19 @@ subscriber.on('connect', async ()=>{
 
 
     // Subscribe to the build channel
-    await subscriber.subscribe('build', (message:string)=>{
-        Logger.debug(`Received ${message} on build channel`);
-        const parsedMsg = JSON.parse(message);
-        const schema = z.custom<BuildChannelMessage>()
-        const result = schema.safeParse(parsedMsg);
+    await subscriber.subscribe('build', async (message:string)=>{
+        Logger.debug(`Received ${message} on build channel, current NodeID: ${node_id}`);
+
+        // Parse the message as a build channel message and make sure that it is valid
+        const messageData:unknown = JSON.parse(message) as unknown;
+        const schema = z.custom<BuildChannelMessage>();
+        const result = schema.safeParse(messageData);
+
         if(!result.success){
             Logger.error(`Invalid message received on build channel: ${result.error.message}`);
             return;
         }
-        const buildMessage:BuildChannelMessage = result.data;
-
-        // TODO: Implement build claiming logic
-
-        // Null means that the message is for all nodes
-        if(buildMessage.target !== node_id && buildMessage.target !== null){
-            Logger.debug(`Build message not targeted at this node, ignoring`);
-            return;
-        }
-        Logger.info(`Received build message: ${JSON.stringify(buildMessage)}`);
+        await processMessage(messageData as BuildChannelMessage, node_id, editor as RedisClientType);
     })
 })
 

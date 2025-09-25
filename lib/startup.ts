@@ -94,10 +94,21 @@ export async function startup(){
     }
     Logger.debug('Connected to Redis editor');
     // Insert the node into Redis
-    await editor.json.set(`node:${controllerResponse.node_id}`, "$", registrationBody).catch((err:Error)=>{
+    await editor.json.set(`node:${controllerResponse.node_id}:info`, "$", registrationBody).catch((err:Error)=>{
         Logger.error(`Failed to insert node into Redis: ${err.message}`);
         throw new Error(`Failed to insert node into Redis: ${err.message}`);
     });
+
+    // Setup all the necessary storage items for this node (e.g current builds. queued builds etc)
+    await editor.json.set(`node:${controllerResponse.node_id}:current_builds`, "$", []).catch((err:Error)=>{
+        Logger.error(`Failed to setup current builds in Redis: ${err.message}`);
+        throw new Error(`Failed to setup current builds in Redis: ${err.message}`);
+    })
+    await editor.json.set(`node:${controllerResponse.node_id}:queued_builds`, "$", []).catch((err:Error)=>{
+        Logger.error(`Failed to setup queued builds in Redis: ${err.message}`);
+        throw new Error(`Failed to setup queued builds in Redis: ${err.message}`);
+    })
+
     await editor.quit().catch((err:Error)=>{
         Logger.error(`Failed to close Redis editor connection: ${err.message}`);
         throw new Error(`Failed to close Redis editor connection: ${err.message}`);
