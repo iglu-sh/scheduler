@@ -42,14 +42,19 @@ export async function startup(){
 
     // Contact the controller to register this node
     Logger.debug("Registering node with controller...");
-
+    let arch = process.arch.includes('x64') ? `x86_64-${process.platform}` : process.arch
+    console.log(arch)
+    if(arch === 'arm64'){
+        arch = `aarch64-${process.platform}`
+    }
+    console.log(arch)
     const registrationBody:nodeRegistrationRequest = {
         node_name: env.data.NODE_NAME,
         node_psk: env.data.AUTH_TOKEN,
         node_address: env.data.INTERFACE,
         node_port: parseInt(env.data.PORT),
         node_version: 'unknown', // This should be set to the version of the scheduler
-        node_arch: process.arch,
+        node_arch: arch,
         node_os: process.platform,
         node_max_jobs: parseInt(env.data.MAX_BUILDS)
     }
