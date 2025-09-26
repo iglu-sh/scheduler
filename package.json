@@ -15,13 +15,13 @@
   },
   "dependencies": {
     "@iglu-sh/logger": "^1.0.4",
-    "@iglu-sh/types": "^0.1.2",
-    "@types/dockerode": "^3.3.42",
-    "@types/pg": "^8.15.4",
-    "dockerode": "^4.0.7",
+    "@iglu-sh/types": "^0.1.13",
+    "@types/dockerode": "^3.3.44",
+    "@types/pg": "^8.15.5",
+    "dockerode": "^4.0.8",
     "dotenv": "^16.6.1",
     "pg": "^8.16.3",
-    "redis": "^5.6.1",
-    "zod": "^4.0.10"
+    "redis": "^5.8.2",
+    "zod": "^4.1.11"
   }
 }

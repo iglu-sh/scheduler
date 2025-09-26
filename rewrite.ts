@@ -19,7 +19,7 @@ function isAuthenticated(req:Request):boolean{
     const authToken = authHeader.split(' ')[1];
     return !(!authToken || authToken !== process.env.AUTH_TOKEN);
 }
-let {env, node_id, node_data} = await startup().catch((err:Error)=>{
+let {env, node_id, node_data, arch, node_psk} = await startup().catch((err:Error)=>{
     Logger.error(`Failed to start scheduler: ${err.message}`);
     process.exit(1)
 })
@@ -153,7 +153,7 @@ subscriber.on('connect', async ()=>{
             Logger.error(`Invalid message received on build channel: ${result.error.message}`);
             return;
         }
-        await processMessage(messageData as BuildChannelMessage, node_id, editor as RedisClientType);
+        await processMessage(messageData as BuildChannelMessage, node_id, arch, editor as RedisClientType, node_psk);
     })
 })
 

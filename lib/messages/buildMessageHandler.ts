@@ -1,8 +1,9 @@
-import type {BuildChannelMessage, BuildQueueMessage} from "@iglu-sh/types/controller";
+import type {arch, BuildChannelMessage, BuildClaimResponse, BuildQueueMessage} from "@iglu-sh/types/controller";
+import type {queueEntry} from "@iglu-sh/types/scheduler";
 import Logger from "@iglu-sh/logger";
 import type {RedisClientType} from "redis";
 
-export default async function processMessage(message: BuildChannelMessage, node_id:string, editor:RedisClientType): Promise<void> {
+export default async function processMessage(message: BuildChannelMessage, node_id:string, arch:arch, editor:RedisClientType, node_psk:string): Promise<void> {
     // We can immediately ignore messages sent by ourselves OR messages not intended for us OR messages that have the type of claim (not handled by nodes)
     if(
         message.type === "build" ||
@@ -20,10 +21,73 @@ export default async function processMessage(message: BuildChannelMessage, node_
             // Cancelled build - Publish a cancelled message to the build channel
         }
         if((message.data as BuildQueueMessage).type === "add"){
+            const data = message.data as BuildQueueMessage
             // New build - Add the build to the queue in Redis
+            Logger.debug(`Got new build message for build ${data.job_id}`)
+
+            // Check if we can even build this job
+
+            // Get our current arch
+            if(arch !== data.arch){
+                Logger.debug(`Not applying for build ${data.job_id} as it is for arch ${data.arch} and we are ${arch}`)
+            }
+            Logger.info(`Applying for build ${data.job_id} for arch ${data.arch}`)
+            // Get our current queued builds
+            const currentQueuedBuilds = await editor.json.get(`node:${node_id}:queued_builds`) as Array<queueEntry>
+
+            // We set a limit of the maximum number of running builds for the queue as well just so we don't get overwhelmed with queued builds and give other nodes a chance to pick up builds
+            if(currentQueuedBuilds.length >= parseInt(process.env.MAX_BUILDS!)){
+                Logger.debug(`Not applying for build ${data.job_id} as we are already at our max job limit of ${process.env.MAX_BUILDS!}`)
+                return
+            }
+
+            // At this point, we can apply for the build
+            // This is done by getting all the info of the build from the controller and sending a message to the controller endpoint:
+            // /api/v1/node/job/apply with the body of type BuildClaimMessage
+            // The request contains the node_id as X-IGLU-NODE-ID header and the node_psk as the Authorization header
+            const claimMessage:BuildChannelMessage = {
+                type: "claim",
+                sender: node_id,
+                target: "controller",
+                data: {
+                    type: "claim",
+                    builder_id: data.builder_id,
+                    job_id: data.job_id
+                }
+            }
+
+            // Send the request to the controller
+            fetch(`${process.env.CONTROLLER_URL}/api/v1/node/job/apply`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-IGLU-NODE-ID": node_id,
+                    "Authorization": node_psk
+                },
+                body: JSON.stringify(claimMessage)
+            }).catch((err)=>{
+                Logger.debug(`Fetch failed with error: ${(err as Error).message}, job is probably gone`);
+            })
         }
     }
     if(message.type === "claim"){
+        if((message.data as BuildClaimResponse).type !== "claim_response"){
+            Logger.debug(`Ignoring claim message with invalid data type ${(message.data as BuildClaimResponse).type}`);
+            return;
+        }
 
+        // If the type is claim, we will probably have a claim response
+        const data:BuildClaimResponse = message.data as BuildClaimResponse
+        if(data.result !== "approved"){
+            Logger.debug(`Did not get approval for build ${data.job_id}, response was ${data.result}`);
+            return;
+        }
+        Logger.info(`Got approval for build ${data.job_id}, adding to queue`);
+
+        // Add the build to the queue in Redis
+        await editor.json.arrAppend(`node:${node_id}:queued_builds`, "$", {
+            job_id: data.job_id,
+            build_config_id: data.builder_id,
+        } as queueEntry)
     }
 }

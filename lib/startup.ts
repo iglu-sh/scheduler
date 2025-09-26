@@ -2,6 +2,7 @@ import Logger from "@iglu-sh/logger";
 import {z} from 'zod'
 import type {nodeRegistrationRequest, nodeRegistrationResponse} from "@iglu-sh/types/scheduler";
 import {createClient} from "redis";
+import type {arch} from "@iglu-sh/types/controller";
 
 /*
 * This file is responsible for starting the scheduler.
@@ -120,6 +121,7 @@ export async function startup(){
         env: env.data,
         node_id: controllerResponse.node_id,
         node_psk: registrationBody.node_psk,
-        node_data:registrationBody
+        node_data:registrationBody,
+        arch: registrationBody.node_arch as arch
     }
 }
