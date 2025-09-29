@@ -7,7 +7,7 @@ import Logger from "@iglu-sh/logger";
 import {z} from 'zod'
 import * as fs from "node:fs";
 import {startupHandler, stopHandler} from "@/lib/docker/eventHelpers.ts";
-
+import Redis from "@/lib/redis.ts";
 /*
 * @description Registers Docker events and handlers for build start, stop, and error.
 * @param {Docker} docker - The Docker instance to register events on.
@@ -15,7 +15,6 @@ import {startupHandler, stopHandler} from "@/lib/docker/eventHelpers.ts";
 * */
 export function registerDockerEvents(
     docker:Docker,
-    redis:RedisClientType,
     node_id:string
 ){
     docker.getEvents(async (err, data)=>{
@@ -73,8 +72,6 @@ export function registerDockerEvents(
                 return;
             }
 
-            console.log(parsedEventData)
-
             // Check if this event is related to a container under our management
             // As a reminder, a container name is created according to the following format:
             // iglu-builder_<build_id>_<node_id>
@@ -96,10 +93,12 @@ export function registerDockerEvents(
             // Now we can handle the event based on its action
             if(parsedEventData.Action === 'start'){
                 // We now run the builderStartup function to initialize the container and build
-                startupHandler(docker, redis, DOCKER_NAME, parsedEventData.Actor.ID)
+                startupHandler(docker, DOCKER_NAME, parsedEventData.Actor.ID)
             }
             else if(parsedEventData.Action === 'die' || parsedEventData.Action === 'stop'){
-                stopHandler(docker, redis, DOCKER_NAME, parsedEventData.Actor.ID)
+                // Once a container stops, we run the stopHandler function to clean up and after that refresh the queue
+                stopHandler(docker, DOCKER_NAME, parsedEventData.Actor.ID)
+                Redis.
             }
             else{
                 Logger.debug(`Ignoring Docker event with action ${parsedEventData.Action} for container ${DOCKER_NAME}`);

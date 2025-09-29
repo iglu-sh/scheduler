@@ -5,7 +5,7 @@
       "name": "scheduler",
       "dependencies": {
         "@iglu-sh/logger": "^1.0.4",
-        "@iglu-sh/types": "^0.1.12",
+        "@iglu-sh/types": "^0.1.13",
         "@types/dockerode": "^3.3.44",
         "@types/pg": "^8.15.5",
         "dockerode": "^4.0.8",

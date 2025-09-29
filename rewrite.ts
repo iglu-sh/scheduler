@@ -7,10 +7,10 @@ import {startup} from "@/lib/startup.ts";
 import processMessage from "@/lib/messages/buildMessageHandler.ts";
 import type {BuildChannelMessage, NodeChannelMessage} from "@iglu-sh/types/controller";
 import {registerDockerEvents} from "@/lib/docker/events.ts";
+import Redis from "@/lib/redis.ts";
 const PORT = process.env.PORT || '3000';
 const INTERFACE = process.env.INTERFACE || "127.0.0.1"
 const STARTED_DATE = new Date();
-
 function isAuthenticated(req:Request):boolean{
     if(!req.headers.get("Authorization")){
         return false;
@@ -34,6 +34,8 @@ const editor = redis.createClient({
 const subscriber = redis.createClient({
     url: `redis://${env.REDIS_USER}:${env.REDIS_PASSWORD}@${env.REDIS_HOST}:${env.REDIS_PORT}/0`,
 });
+// Construct the Static Redis client for other uses
+const REDIS = new Redis(editor as RedisClientType)
 
 // Handle Redis connection errors
 editor.on('error', (err:Error)=>{

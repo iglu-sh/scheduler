@@ -8,7 +8,7 @@ import type {RedisClientType} from "redis";
 * @param {string} container_name - The name of the Docker container to inspect.
 * @param {string} actor_id - The ID of the actor that started the container.
 * */
-export async function startupHandler(docker:Docker, redis:RedisClientType, container_name:string, actor_id:string){
+export async function startupHandler(docker:Docker, container_name:string, actor_id:string){
     // First, we need to inspect the container to get its details
     const container = docker.getContainer(container_name)
     const container_inspect_data = await container.inspect()
@@ -19,6 +19,6 @@ export async function startupHandler(docker:Docker, redis:RedisClientType, conta
     const container_ip = container_inspect_data.NetworkSettings.IPAddress;
     console.log(container_ip)
 }
-export function stopHandler(docker:Docker, redis:RedisClientType, container_name:string, actor_id:string){
+export function stopHandler(docker:Docker, container_name:string, actor_id:string){
 
 }
