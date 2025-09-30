@@ -1,5 +1,8 @@
 import type {RedisClientType} from "redis";
-
+import Logger from "@iglu-sh/logger";
+import type {queueEntry} from "@iglu-sh/types/scheduler";
+import {start} from "lib/docker/start"
+import type {combinedBuilder} from "@iglu-sh/types/core/db";
 export default class Redis {
     private static client: RedisClientType
     public static node_id: string
@@ -21,6 +24,11 @@ export default class Redis {
     }> {
         return Redis.runningBuilders
     }
+
+    public static async getBuildConfig(build_config_id:number):combinedBuilder{
+        
+    }
+
     public addBuilderToRunning(job_id:string, builder_id:string, container_id:string): void{
         Redis.runningBuilders.push({
             job_id,
@@ -51,9 +59,42 @@ export default class Redis {
         if(Redis.runningBuilders.length >= max_builds){
             return
         }
-        // Get the queued builds from Redis
-        Redis.client.json.get(`node:${Redis.node_id}:queued_builds`).then((queued_builds:any) => {
 
+        // Get the queued builds from Redis
+        const queued_builders:queueEntry[] = Redis.client.json.get(`node:${Redis.node_id}:queued_builds`).catch((err)=>{
+            Logger.error("Failed to fetch queued builders. Is your Redis instance reachable?")
+            Logger.debug(`Redis Error: ${err}`)
+            return []
         })
+
+        // If the length is zero then we can just exit
+        if(queued_builders.length === 0 || !queued_builders[0]){
+            Logger.debug(`No builds in queue.`)
+            return
+        }
+
+        // If the length is more than zero we call the start function.
+        const job_id = queued_builders[0].job_id
+        const builder_config_id = queued_builders[0].build_config_id
+        await start(builder_config_id, job_id)
+    }
+    public async dockerStartHandler(job_id:string){
+
+    }
+    /*
+     * Handles the exit of a specific container. It removes the Job from the running builders array in redis,
+     * and handles all cleanup tasks relating to redis
+     */
+    public async dockerStopHandler(container_id:string){
+        // Reminder: Container ID is comprised of:
+        // iglu-builder_<build_id>_<node_id>
+        const JOB_ID = container_id.split("_")[1]
+        if(!JOB_ID){
+            Logger.error(`Could not get Job ID from Container ID: ${container_id}. This is a bug.`)
+            throw new Error(`Could not get Job ID from Container ID: ${container_id}.`)
+        }
+        assert(JOB_ID)
+
+
     }
 }

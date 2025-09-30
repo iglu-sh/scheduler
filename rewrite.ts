@@ -8,6 +8,7 @@ import processMessage from "@/lib/messages/buildMessageHandler.ts";
 import type {BuildChannelMessage, NodeChannelMessage} from "@iglu-sh/types/controller";
 import {registerDockerEvents} from "@/lib/docker/events.ts";
 import Redis from "@/lib/redis.ts";
+import DockerWrapper from "@/lib/docker/dockerWrapper.ts";
 const PORT = process.env.PORT || '3000';
 const INTERFACE = process.env.INTERFACE || "127.0.0.1"
 const STARTED_DATE = new Date();
@@ -169,9 +170,6 @@ await subscriber.connect().catch((err:Error)=>{
     process.exit(1);
 });
 
-// Insert the node information into Redis
-await editor.json.set(`node:${node_id}`, "$", node_data);
-
 /*
 * At this point, the scheduler is ready to handle healthchecks, deregistrations, and build messages.
 * Next up is to create the Dockerode instance and listen for messages / docker events
@@ -179,5 +177,9 @@ await editor.json.set(`node:${node_id}`, "$", node_data);
 const DockerClient = new Docker({
     socketPath: env.DOCKER_SOCKET
 })
+
+// Setup the Docker Class
+new DockerWrapper(DockerClient)
+
 registerDockerEvents(DockerClient, editor as RedisClientType, node_id)
 Logger.info(`Scheduler startup complete, listening on redis channels`)

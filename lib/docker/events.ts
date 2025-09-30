@@ -98,7 +98,7 @@ export function registerDockerEvents(
             else if(parsedEventData.Action === 'die' || parsedEventData.Action === 'stop'){
                 // Once a container stops, we run the stopHandler function to clean up and after that refresh the queue
                 stopHandler(docker, DOCKER_NAME, parsedEventData.Actor.ID)
-                Redis.
+                Redis.stopHandler(DOCKER_NAME, parsedEventData.Actor.ID)
             }
             else{
                 Logger.debug(`Ignoring Docker event with action ${parsedEventData.Action} for container ${DOCKER_NAME}`);
