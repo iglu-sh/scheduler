@@ -12,13 +12,14 @@ import DockerWrapper from "@/lib/docker/dockerWrapper.ts";
 * @return {Promise<void>}
 * @throws {Error} If there is an error in starting the Docker container or if the builder config is not found
 * */
-export async function start(builderConfigID:number, run_ID:string){
-
+export async function start(builderConfigID:number, run_ID:string,node_id:string){
+    Logger.info(`Starting Docker container for builder config ID: ${builderConfigID} and run ID: ${run_ID}`);
 
     // Create a unique Docker container name using the builder config ID and run ID
-    const CONTAINER_NAME = `iglu-builder_${builderConfigID}_${run_ID}_${Bun.randomUUIDv7()}`;
+    const CONTAINER_NAME = `iglu-builder_${builderConfigID}_${run_ID}_${node_id}`;
 
     // Create the Docker container with the specified configuration
-    //FIXME: This might be a good place create a WritableStream to capture the output of the Docker container and then deprecate the whole websocket output thing
     DockerWrapper.startBuilder(CONTAINER_NAME, builderConfigID, run_ID, "latest", "DEBUG")
+
+    // This then triggers the docker event listener in lib/docker/events.ts which will handle the rest of the process (i.e sending configs, receiving logs, etc.)
 }

@@ -2,6 +2,7 @@ import type {arch, BuildChannelMessage, BuildClaimResponse, BuildQueueMessage} f
 import type {queueEntry} from "@iglu-sh/types/scheduler";
 import Logger from "@iglu-sh/logger";
 import type {RedisClientType} from "redis";
+import Redis from "@/lib/redis.ts";
 
 export default async function processMessage(message: BuildChannelMessage, node_id:string, arch:arch, editor:RedisClientType, node_psk:string): Promise<void> {
     // We can immediately ignore messages sent by ourselves OR messages not intended for us OR messages that have the type of claim (not handled by nodes)
@@ -56,6 +57,7 @@ export default async function processMessage(message: BuildChannelMessage, node_
                 }
             }
 
+            Logger.debug(`Using PSK: ${node_psk} to apply for build ${data.job_id}`)
             // Send the request to the controller
             fetch(`${process.env.CONTROLLER_URL}/api/v1/node/job/apply`, {
                 method: "POST",
@@ -89,5 +91,8 @@ export default async function processMessage(message: BuildChannelMessage, node_
             job_id: data.job_id,
             build_config_id: data.builder_id,
         } as queueEntry)
+        // Wait a second to ensure the above operation completes before we check for new jobs
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await Redis.checkForNewJobs()
     }
 }

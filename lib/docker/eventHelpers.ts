@@ -1,5 +1,7 @@
 import Docker from "dockerode";
 import type {RedisClientType} from "redis";
+import Redis from "@/lib/redis.ts";
+import Logger from "@iglu-sh/logger";
 
 /*
 * @description Handles the Startup of a Docker Container (e.g. build a nixconfig)
@@ -9,6 +11,7 @@ import type {RedisClientType} from "redis";
 * @param {string} actor_id - The ID of the actor that started the container.
 * */
 export async function startupHandler(docker:Docker, container_name:string, actor_id:string){
+    Logger.debug(`Container ${container_name} started`)
     // First, we need to inspect the container to get its details
     const container = docker.getContainer(container_name)
     const container_inspect_data = await container.inspect()
@@ -19,6 +22,6 @@ export async function startupHandler(docker:Docker, container_name:string, actor
     const container_ip = container_inspect_data.NetworkSettings.IPAddress;
     console.log(container_ip)
 }
-export function stopHandler(docker:Docker, container_name:string, actor_id:string){
-
+export async function stopHandler(container_name:string, stop_type:"die"|"stop"){
+    await Redis.dockerStopHandler(container_name, stop_type === 'die' ? "failed" : "success")
 }

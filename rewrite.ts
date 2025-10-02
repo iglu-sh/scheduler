@@ -36,7 +36,7 @@ const subscriber = redis.createClient({
     url: `redis://${env.REDIS_USER}:${env.REDIS_PASSWORD}@${env.REDIS_HOST}:${env.REDIS_PORT}/0`,
 });
 // Construct the Static Redis client for other uses
-const REDIS = new Redis(editor as RedisClientType)
+const REDIS = new Redis(editor as RedisClientType, node_id);
 
 // Handle Redis connection errors
 editor.on('error', (err:Error)=>{
@@ -46,6 +46,9 @@ subscriber.on('error', (err:Error)=>{
     Logger.error(`Redis subscriber error: ${err.message}`);
 });
 
+
+
+
 // Handle Process exit to close Redis connections gracefully
 process.on('SIGINT', async ()=>{
     Logger.info('SIGINT received, closing Redis connections...');
@@ -54,6 +57,53 @@ process.on('SIGINT', async ()=>{
     Logger.info('Redis connections closed, exiting process.');
     process.exit(0);
 });
+
+/*
+* Create the Dockerode Instance and pull the latest builder image if necessary.
+* */
+const DockerClient = new Docker({
+    socketPath: env.DOCKER_SOCKET
+})
+
+// Pull the builder image:
+async function pullImg(){
+    Logger.info('Pulling image...');
+    return new Promise<void>((resolve, reject):void=>{
+        DockerClient.pull('ghcr.io/iglu-sh/iglu-builder:latest', (err:Error, stream:any):void=>{
+            if(err){
+                Logger.error(`Failed to pull builder image: ${err.message}`);
+                reject(err)
+            }
+            stream.on('data', (data:any)=>{
+                try{
+                    JSON.parse(data.toString())
+                }
+                catch(err:any){
+                    return
+                }
+                const status = JSON.parse(data.toString());
+                if(status.status === "Downloading"){
+                    Logger.info(`Pulling Image: ${status.progress}`)
+                }
+                else if(status.status === "Download complete"){
+                    Logger.info(`Done pulling builder image`)
+                }
+            })
+            DockerClient.modem.followProgress(stream, (err, output)=>{
+                if(err){
+                    reject()
+                }
+                resolve()
+                Logger.info('Successfully pulled latest builder image');
+            })
+        })
+    })
+}
+await pullImg()
+
+// Setup the Docker Class
+new DockerWrapper(DockerClient)
+await DockerWrapper.setup()
 
 // Subscribe to both channels
 subscriber.on('connect', async ()=>{
@@ -170,16 +220,5 @@ await subscriber.connect().catch((err:Error)=>{
     process.exit(1);
 });
 
-/*
-* At this point, the scheduler is ready to handle healthchecks, deregistrations, and build messages.
-* Next up is to create the Dockerode instance and listen for messages / docker events
-* */
-const DockerClient = new Docker({
-    socketPath: env.DOCKER_SOCKET
-})
-
-// Setup the Docker Class
-new DockerWrapper(DockerClient)
-
-registerDockerEvents(DockerClient, editor as RedisClientType, node_id)
+registerDockerEvents(DockerClient, node_id)
 Logger.info(`Scheduler startup complete, listening on redis channels`)
