@@ -24,7 +24,8 @@ let {env, node_id, node_data, arch, node_psk} = await startup().catch((err:Error
     Logger.error(`Failed to start scheduler: ${err.message}`);
     process.exit(1)
 })
-
+process.env.NODE_ID = node_id;
+process.env.NODE_PSK = node_psk;
 Logger.info('Startup Complete')
 Logger.debug('Listening for builds and on the node channel...')
 
@@ -99,7 +100,9 @@ async function pullImg(){
         })
     })
 }
-await pullImg()
+if(!process.env.AUTO_PULL_IMG || process.env.AUTO_PULL_IMG === "true"){
+    await pullImg()
+}
 
 // Setup the Docker Class
 new DockerWrapper(DockerClient)
@@ -183,6 +186,9 @@ subscriber.on('connect', async ()=>{
                     env = newEnv.env;
                     node_id = newEnv.node_id;
                     node_data = newEnv.node_data;
+                    process.env.NODE_ID = newEnv.node_id;
+                    process.env.NODE_PSK = newEnv.node_psk;
+                    process.env.NODE_DATA = JSON.stringify(node_data);
                     Logger.info(`Scheduler restarted successfully with new NodeID: ${node_id}`);
                 }).catch((err:Error)=>{
                     Logger.error(`Failed to restart scheduler: ${err.message}`);
@@ -206,7 +212,8 @@ subscriber.on('connect', async ()=>{
             Logger.error(`Invalid message received on build channel: ${result.error.message}`);
             return;
         }
-        await processMessage(messageData as BuildChannelMessage, node_id, arch, editor as RedisClientType, node_psk);
+        Logger.debug(`Using these envs: ${node_id}, ${node_psk}`)
+        await processMessage(messageData as BuildChannelMessage, process.env.NODE_ID!, arch, editor as RedisClientType, process.env.NODE_PSK!);
     })
 })
 

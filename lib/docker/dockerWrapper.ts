@@ -29,9 +29,22 @@ export default class DockerWrapper{
         }
     }
     // Starts a builder with the given id
-    static startBuilder(id:string, builderConfigID:number, jobID:string, release:string, log_level:string){
-        DockerWrapper.DockerClient.run(`ghcr.io/iglu-sh/iglu-builder:${release}`, [], [], {Tty: false, name: id, HostConfig:{NetworkMode:'iglu-nw'}, Env: [`LOG_LEVEL=${log_level}`]}, async (err)=>{
-            if(err){
+    static async startBuilder(id:string, builderConfigID:number, jobID:string, release:string, log_level:string){
+        // Check if a builder with that name already exists
+        const containers = await DockerWrapper.DockerClient.listContainers()
+        const duplicateNameContainers = containers.filter((container)=>{
+            const containerNameLength = container.Names.filter((name)=>{
+                return name.includes(id)
+            })
+            if(containerNameLength.length > 0){
+                return true
+            }
+            return false
+        })
+        if(duplicateNameContainers.length > 0){
+            throw new Error(`Could not start container with id: ${id}, duplicate name`);
+        }
+        DockerWrapper.DockerClient.run(`ghcr.io/iglu-sh/iglu-builder:${release}`, [], [], {Tty: false, name: id, HostConfig:{NetworkMode:'iglu-nw'}, Env: [`LOG_LEVEL=${log_level}`]}, async (err)=>{ if(err){
                 Logger.error(`Error starting Docker container for builder config ID ${builderConfigID} (jobID: ${jobID}): ${err.message}`);
                 throw new Error(`Error starting Docker container for builder config ID ${builderConfigID}: ${err.message}`);
             }

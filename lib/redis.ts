@@ -3,7 +3,7 @@ import Logger from "@iglu-sh/logger";
 import type {queueEntry} from "@iglu-sh/types/scheduler";
 import {start} from "lib/docker/start"
 import type {combinedBuilder} from "@iglu-sh/types/core/db";
-import * as assert from "node:assert";
+
 export default class Redis {
     private static client: RedisClientType
     public static node_id: string
@@ -94,6 +94,9 @@ export default class Redis {
         // If the length is more than zero we call the start function.
         const job_id = queued_builders[0].job_id
         const builder_config_id = queued_builders[0].build_config_id
+
+        // Remove that job from the queue
+        Redis.removeBuilderFromQueue(job_id)
         start(parseInt(builder_config_id), job_id, Redis.node_id).catch((err:Error)=>{
             Logger.error(`Failed to start builder for job ID ${job_id} with builder config ID ${builder_config_id}.`)
             Logger.debug(`Error: ${err.message}`)
@@ -120,7 +123,6 @@ export default class Redis {
             Logger.error(`Could not get Job ID from Container ID: ${container_id}. This is a bug.`)
             throw new Error(`Could not get Job ID from Container ID: ${container_id}.`)
         }
-        assert(JOB_ID)
 
         //TODO: Update the job status in the database to either "failed" or "success" based on the state parameter
         // and then inform the controller that the job is done via REST API call
