@@ -48,18 +48,19 @@ export default class Redis {
         Redis.checkForNewJobs()
     }
     // Removes the job with the specified job_id from the running builders list and checks for new jobs
-    public static removeJobFromRunning(job_id:string): void{
+    public static async removeJobFromRunning(job_id:string):Promise<void>{
         Redis.runningBuilders = Redis.runningBuilders.filter(builder => builder.job_id !== job_id);
         Redis.checkForNewJobs()
     }
-    public static removeBuilderFromQueue(job_id:string):void{
+    public static async removeBuilderFromQueue(job_id:string):Promise<void>{
+        Logger.debug(`Removing build ${job_id} from queue`)
         // Remove the builder with the specified job_id from the queued builds list in Redis and add it to the running builders list
-        Redis.client.json.get(`node:${Redis.node_id}:queued_builds`).then((queued_builds:any) => {
+        await Redis.client.json.get(`node:${Redis.node_id}:queued_builds`).then(async (queued_builds:any) => {
             if(!queued_builds){
                 return
             }
             const new_queue = queued_builds.filter((build:any) => build.job_id !== job_id)
-            Redis.client.json.set(`node:${Redis.node_id}:queued_builds`, '.', new_queue)
+            await Redis.client.json.set(`node:${Redis.node_id}:queued_builds`, '.', new_queue)
         })
     }
     public static async checkForNewJobs():Promise<void>{
@@ -94,9 +95,7 @@ export default class Redis {
         // If the length is more than zero we call the start function.
         const job_id = queued_builders[0].job_id
         const builder_config_id = queued_builders[0].build_config_id
-
-        // Remove that job from the queue
-        Redis.removeBuilderFromQueue(job_id)
+        await Redis.removeBuilderFromQueue(job_id)
         start(parseInt(builder_config_id), job_id, Redis.node_id).catch((err:Error)=>{
             Logger.error(`Failed to start builder for job ID ${job_id} with builder config ID ${builder_config_id}.`)
             Logger.debug(`Error: ${err.message}`)
@@ -104,18 +103,16 @@ export default class Redis {
         })
     }
     public static async dockerStartHandler(job_id:string, builder_id:string, container_id:string){
-
+        Logger.debug("Running docker start redis hook")
         // Add the job to the running builders list in Redis
         Redis.addBuilderToRunning(job_id, builder_id, container_id)
-
-        // Remove the job from the queued builds list in Redis
-        Redis.removeBuilderFromQueue(job_id)
     }
     /*
      * Handles the exit of a specific container. It removes the Job from the running builders array in redis,
      * and handles all cleanup tasks relating to redis
      */
     public static async dockerStopHandler(container_id:string, state: "failed" | "success"){
+        Logger.debug("Running docker stop redis hook")
         // Reminder: Container ID comprises:
         // iglu-builder_<build_id>_<node_id>
         const JOB_ID = container_id.split("_")[1]

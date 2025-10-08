@@ -11,16 +11,25 @@ import Logger from "@iglu-sh/logger";
 * @param {string} actor_id - The ID of the actor that started the container.
 * */
 export async function startupHandler(docker:Docker, container_name:string, actor_id:string){
-    Logger.debug(`Container ${container_name} started`)
     // First, we need to inspect the container to get its details
     const container = docker.getContainer(container_name)
     const container_inspect_data = await container.inspect()
     if(!container_inspect_data){
         throw new Error(`Failed to inspect container ${container_name}`);
     }
-    // Now we can publish the event to Redis
-    const container_ip = container_inspect_data.NetworkSettings.IPAddress;
-    console.log(container_ip)
+
+    const container_ip_config = container_inspect_data.NetworkSettings.Networks["iglu-nw"];
+    if(!container_ip_config){
+        Logger.error(`Started builder container not connected to iglu-nw ${container_name}`)
+        throw new Error(`Failed to inspect container ${container_name}`);
+    }
+    const ipAddress = container_ip_config.IPAddress;
+    Logger.debug(`Container ${container_name} started, IP Address: ${ipAddress}`);
+
+    // TODO: Implement Startup Logic
+    /*
+    * Startup Logic for a run, this includes sending a buildUpdate on the Redis Build Channel as well as
+    * */
 }
 export async function stopHandler(container_name:string, stop_type:"die"|"stop"){
     await Redis.dockerStopHandler(container_name, stop_type === 'die' ? "failed" : "success")

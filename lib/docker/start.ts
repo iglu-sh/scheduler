@@ -18,6 +18,7 @@ export async function start(builderConfigID:number, run_ID:string,node_id:string
 
     // Create a unique Docker container name using the builder config ID and run ID
     const CONTAINER_NAME = `iglu-builder_${builderConfigID}_${run_ID}_${node_id}`;
+    await Redis.dockerStartHandler(run_ID, builderConfigID.toString(), CONTAINER_NAME)
 
     // Create the Docker container with the specified configuration
     try{

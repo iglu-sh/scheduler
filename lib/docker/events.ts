@@ -96,6 +96,7 @@ export function registerDockerEvents(
                 console.log(parsedEventData.Action)
                 // Now we can handle the event based on its action
                 if(parsedEventData.Action === 'start'){
+                    Logger.debug("Container managed by this scheduler started, running startup hooks")
                     // We now run the builderStartup function to initialize the container and build
                     await startupHandler(docker, DOCKER_NAME, parsedEventData.Actor.ID)
                 }
