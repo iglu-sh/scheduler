@@ -22,6 +22,7 @@ export async function start(builderConfigID:number, run_ID:string,node_id:string
 
     // Create the Docker container with the specified configuration
     try{
+        // FIXME: This does not catch errors properly, needs to be fixed in dockerWrapper.ts
         await DockerWrapper.startBuilder(CONTAINER_NAME, builderConfigID, run_ID, "latest", "DEBUG")
     }
     catch(err){

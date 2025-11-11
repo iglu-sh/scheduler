@@ -227,5 +227,5 @@ await subscriber.connect().catch((err:Error)=>{
     process.exit(1);
 });
 
-registerDockerEvents(DockerClient, node_id)
+registerDockerEvents(DockerClient, node_id, editor as RedisClientType)
 Logger.info(`Scheduler startup complete, listening on redis channels`)

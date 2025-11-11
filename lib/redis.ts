@@ -32,7 +32,16 @@ export default class Redis {
 
     public static async getBuildConfig(build_config_id:number):Promise<combinedBuilder>{
         // Fetch the builder config from Redis
-        const build_config = await Redis.client.json.get(`builder_config:${build_config_id}`)
+        const build_config = await Redis.client.json.get(`build_config_${build_config_id}`)
+            .then((data: unknown) => {
+                console.log(data)
+                return data
+            })
+            .catch((err)=>{
+                Logger.error(`Failed to fetch builder config with ID ${build_config_id} from Redis.`)
+                Logger.debug(`Redis Error: ${err}`)
+                return null
+            })
         if(!build_config){
             throw new Error(`Builder config with ID ${build_config_id} not found in Redis.`)
         }

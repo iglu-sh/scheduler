@@ -44,6 +44,21 @@ export default class DockerWrapper{
         if(duplicateNameContainers.length > 0){
             throw new Error(`Could not start container with id: ${id}, duplicate name`);
         }
+
+        // We need to differentiate between darwin and everything else, as darwin does not have support for docker routes
+        // This means that we need to bind the ports to localhost instead (and generate random ones)
+        if(process.platform === 'darwin'){
+            Logger.info(`Starting Docker container for builder config ID ${builderConfigID} (jobID: ${jobID}) on Darwin platform`);
+            DockerWrapper.DockerClient.run(`ghcr.io/iglu-sh/iglu-builder:${release}`, [], [], {Tty: false, name: id, HostConfig:{NetworkMode:'iglu-nw', PortBindings: {"3000/tcp": [{"HostPort":"30008", "HostIP": "0.0.0.0"}]}}, Env: [`LOG_LEVEL=${log_level}`]}, async (err)=>{
+                // TODO: This does not throw a catchable error for some reason
+                if(err){
+                    Logger.error(`Error starting Docker container for builder config ID ${builderConfigID} (jobID: ${jobID}): ${err.message}`);
+                    throw new Error(`Error starting Docker container for builder config ID ${builderConfigID}: ${err.message}`);
+                }
+            })
+            return
+        }
+
         DockerWrapper.DockerClient.run(`ghcr.io/iglu-sh/iglu-builder:${release}`, [], [], {Tty: false, name: id, HostConfig:{NetworkMode:'iglu-nw'}, Env: [`LOG_LEVEL=${log_level}`]}, async (err)=>{ if(err){
                 Logger.error(`Error starting Docker container for builder config ID ${builderConfigID} (jobID: ${jobID}): ${err.message}`);
                 throw new Error(`Error starting Docker container for builder config ID ${builderConfigID}: ${err.message}`);

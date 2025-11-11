@@ -15,7 +15,8 @@ import Redis from "@/lib/redis.ts";
 * */
 export function registerDockerEvents(
     docker:Docker,
-    node_id:string
+    node_id:string,
+    redis: RedisClientType
 ){
     docker.getEvents(async (err, data)=>{
         if(err){
@@ -98,7 +99,17 @@ export function registerDockerEvents(
                 if(parsedEventData.Action === 'start'){
                     Logger.debug("Container managed by this scheduler started, running startup hooks")
                     // We now run the builderStartup function to initialize the container and build
-                    await startupHandler(docker, DOCKER_NAME, parsedEventData.Actor.ID)
+                    await startupHandler(docker, DOCKER_NAME, redis)
+                        .catch((err)=>{
+                            // Kill the container if we fail to run the startup handler
+                            // TODO: Handle this better
+                            Logger.error(`Failed to run startup handler for container ${DOCKER_NAME}, stopping container.`)
+                            Logger.debug(`Error: ${err.message}`)
+                            const container = docker.getContainer(DOCKER_NAME);
+                            container.stop().catch((stopErr)=>{
+                                Logger.error(`Failed to stop container ${DOCKER_NAME} after startup handler failure: ${stopErr.message}`);
+                            });
+                        })
                 }
                 else if(parsedEventData.Action === 'die' || parsedEventData.Action === 'stop'){
                     // Once a container stops, we run the stopHandler function to clean up and after that refresh the queue
