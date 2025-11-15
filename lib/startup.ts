@@ -48,7 +48,6 @@ export async function startup(){
     if(arch === 'arm64'){
         arch = `aarch64-${process.platform}`
     }
-    console.log(arch)
     const registrationBody:nodeRegistrationRequest = {
         node_name: env.data.NODE_NAME,
         node_psk: env.data.AUTH_TOKEN,

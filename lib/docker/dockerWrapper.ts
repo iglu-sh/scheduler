@@ -48,6 +48,7 @@ export default class DockerWrapper{
         // We need to differentiate between darwin and everything else, as darwin does not have support for docker routes
         // This means that we need to bind the ports to localhost instead (and generate random ones)
         if(process.platform === 'darwin'){
+            //TODO: Generate random port here
             Logger.info(`Starting Docker container for builder config ID ${builderConfigID} (jobID: ${jobID}) on Darwin platform`);
             DockerWrapper.DockerClient.run(`ghcr.io/iglu-sh/iglu-builder:${release}`, [], [], {Tty: false, name: id, HostConfig:{NetworkMode:'iglu-nw', PortBindings: {"3000/tcp": [{"HostPort":"30008", "HostIP": "0.0.0.0"}]}}, Env: [`LOG_LEVEL=${log_level}`]}, async (err)=>{
                 // TODO: This does not throw a catchable error for some reason
@@ -63,6 +64,13 @@ export default class DockerWrapper{
                 Logger.error(`Error starting Docker container for builder config ID ${builderConfigID} (jobID: ${jobID}): ${err.message}`);
                 throw new Error(`Error starting Docker container for builder config ID ${builderConfigID}: ${err.message}`);
             }
+        })
+    }
+    static async stopBuilder(id:string){
+        // Stops a builder with the given id
+        const container = DockerWrapper.DockerClient.getContainer(id)
+        await container.stop().catch((err)=>{
+            Logger.error(`Could not stop container with id: ${id}, error: ${err.message}`);
         })
     }
 }

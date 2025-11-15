@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "@iglu-sh/logger": "^1.0.4",
-    "@iglu-sh/types": "^0.1.23",
-    "@types/dockerode": "^3.3.45",
+    "@iglu-sh/types": "^0.1.29",
+    "@types/dockerode": "^3.3.46",
     "@types/pg": "^8.15.6",
     "dockerode": "^4.0.9",
     "dotenv": "^16.6.1",

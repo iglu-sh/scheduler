@@ -30,7 +30,6 @@ export async function startupHandler(docker:Docker, container_name:string, redis
     const name_split = container_name.split('_');
     const run_ID = name_split[2];
     const builderConfigID = parseInt(name_split[1] || '-1');
-    console.log(name_split, builderConfigID, run_ID)
     if(isNaN(builderConfigID) || builderConfigID < 0){
         Logger.error(`Invalid builder config ID for container ${container_name}`)
         throw new Error(`Invalid builder config ID for container ${container_name}`);
@@ -55,10 +54,22 @@ export async function startupHandler(docker:Docker, container_name:string, redis
                 throw new Error(`Failed to get mapped port for container ${container_name}`);
             }
             console.log(hostIP, mappedPort)
-            wsHandler(
+            await wsHandler(
                 "localhost",
                 mappedPort,
-                builder_config
+                builder_config,
+                container_inspect_data.Id,
+                parseInt(run_ID ?? "0")
+            )
+        }
+        else{
+            // For everything else we can just use the internal docker ip
+            await wsHandler(
+                ipAddress,
+                "3000",
+                builder_config,
+                container_inspect_data.Id,
+                parseInt(run_ID ?? "0")
             )
         }
     }

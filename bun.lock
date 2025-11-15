@@ -5,8 +5,8 @@
       "name": "scheduler",
       "dependencies": {
         "@iglu-sh/logger": "^1.0.4",
-        "@iglu-sh/types": "^0.1.21",
-        "@types/dockerode": "^3.3.45",
+        "@iglu-sh/types": "^0.1.25",
+        "@types/dockerode": "^3.3.46",
         "@types/pg": "^8.15.6",
         "dockerode": "^4.0.9",
         "dotenv": "^16.6.1",
@@ -31,7 +31,7 @@
 
     "@iglu-sh/logger": ["@iglu-sh/logger@1.0.4", "", { "dependencies": { "@types/chalk": "^2.2.4", "@types/node": "^24.0.10", "chalk": "^5.4.1" }, "peerDependencies": { "typescript": "^5.8.3" } }, "sha512-uytsgoQzBLtS7O6ok+WirJvjSRfmCsO1TyAllr6Z8MEuy1X2dhdLBWPwT7goUpc83I74FzVkAD6Smeck0pKVfg=="],
 
-    "@iglu-sh/types": ["@iglu-sh/types@0.1.23", "", { "peerDependencies": { "typescript": "^5.8.3" } }, "sha512-v4oFHe6IlhFEQYUHolXwKRrtPt7qTieYKCGxstvgJXH8IofwVPSum7P3vr4QC/9pK0rwUhO974F5Efx9ZShzag=="],
+    "@iglu-sh/types": ["@iglu-sh/types@0.1.29", "", { "dependencies": { "zod": "^4.1.12" }, "peerDependencies": { "typescript": "^5.8.3" } }, "sha512-e4tTE8R2IEvDVwchkvQeKMyUw+lfH2M8XYlROPA7EPAgEZL+KFXHf6A6SbAE7Jr1VeU5MqZcsE/zBUAbudg2eA=="],
 
     "@js-sdsl/ordered-map": ["@js-sdsl/ordered-map@4.4.2", "", {}, "sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw=="],
 
@@ -71,7 +71,7 @@
 
     "@types/docker-modem": ["@types/docker-modem@3.0.6", "", { "dependencies": { "@types/node": "*", "@types/ssh2": "*" } }, "sha512-yKpAGEuKRSS8wwx0joknWxsmLha78wNMe9R2S3UNsVOkZded8UqOrV8KoeDXoXsjndxwyF3eIhyClGbO1SEhEg=="],
 
-    "@types/dockerode": ["@types/dockerode@3.3.45", "", { "dependencies": { "@types/docker-modem": "*", "@types/node": "*", "@types/ssh2": "*" } }, "sha512-iYpZF+xr5QLpIICejLdUF2r5gh8IXY1Gw3WLmt41dUbS3Vn/3hVgL+6lJBVbmrhYBWfbWPPstdr6+A0s95DTWA=="],
+    "@types/dockerode": ["@types/dockerode@3.3.46", "", { "dependencies": { "@types/docker-modem": "*", "@types/node": "*", "@types/ssh2": "*" } }, "sha512-pvvaYMN3PKXMvWi7A1UNMgqXpWD4+AWfmTFK1kCxfSXW7dMigaeyufRM9tAJf+sy4CX6tKn76z/fR6ut2SZsrg=="],
 
     "@types/node": ["@types/node@24.1.0", "", { "dependencies": { "undici-types": "~7.8.0" } }, "sha512-ut5FthK5moxFKH2T1CUOC6ctR67rQRvvHdFLCD2Ql6KXmMuCrjsSsRI9UsLCm9M18BMwClv4pn327UvB7eeO1w=="],
 
