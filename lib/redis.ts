@@ -3,6 +3,7 @@ import Logger from "@iglu-sh/logger";
 import type {buildUpdate, controllerStateUpdate, queueEntry} from "@iglu-sh/types/scheduler";
 import {start} from "lib/docker/start"
 import type {builder_runs, combinedBuilder} from "@iglu-sh/types/core/db";
+import DockerWrapper from "@/lib/docker/dockerWrapper.ts";
 
 export default class Redis {
     private static client: RedisClientType
@@ -56,9 +57,19 @@ export default class Redis {
         Redis.checkForNewJobs()
     }
     // Removes the job with the specified job_id from the running builders list and checks for new jobs
-    public static async removeJobFromRunning(job_id:string):Promise<void>{
+    // Returns a boolean if the job was found and removed
+    public static async removeJobFromRunning(job_id:string):Promise<boolean>{
+        Logger.debug(`Removing build ${job_id} from running builders`)
+        const jobIndex = Redis.runningBuilders.findIndex(builder => builder.job_id === job_id);
+        let returnValue = true
+        if(jobIndex === -1){
+            Logger.debug(`Build ${job_id} not found in running builders, nothing to remove`)
+            returnValue = false
+        }
         Redis.runningBuilders = Redis.runningBuilders.filter(builder => builder.job_id !== job_id);
-        Redis.checkForNewJobs()
+
+        await Redis.checkForNewJobs()
+        return returnValue
     }
     public static async removeBuilderFromQueue(job_id:string):Promise<void>{
         Logger.debug(`Removing build ${job_id} from queue`)
@@ -145,14 +156,43 @@ export default class Redis {
     public static async dockerStopHandler(container_id:string){
         Logger.debug("Running docker stop redis hook")
         // Reminder: Container ID comprises:
-        // iglu-builder_<build_id>_<node_id>
-        const JOB_ID = container_id.split("_")[1]
+        // iglu-builder_<build_id>_<run_id>_<node_id>
+        const JOB_ID = container_id.split("_")[2]
         if(!JOB_ID){
             Logger.error(`Could not get Job ID from Container ID: ${container_id}. This is a bug.`)
             throw new Error(`Could not get Job ID from Container ID: ${container_id}.`)
         }
 
-        await Redis.removeJobFromRunning(JOB_ID)
+        const containerWasFound = await Redis.removeJobFromRunning(JOB_ID)
+        if(!containerWasFound){
+            // If the container was not found in the running builders list, we need to try to send an update to the controller (even in the case of a canceled build which will result in a 423 locked error)
+            // This code path is important when the dockerStopHandler is called for a container that was never started properly and thus never added to the running builders list
+            const requestObj:controllerStateUpdate = {
+                job_id: parseInt(JOB_ID),
+                new_state: "failed",
+                old_state: "running",
+                timestamp: new Date()
+            }
+            await fetch(`${process.env.CONTROLLER_URL}/api/v1/tasks/state/inform`, {
+                method: "POST",
+                body: JSON.stringify(requestObj),
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": process.env.NODE_PSK!,
+                    "X-IGLU-NODE-ID": Redis.node_id
+                }
+            })
+                .catch((err)=>{
+                    Logger.error(`Failed to inform controller about status update for job ID ${JOB_ID}.`)
+                    Logger.debug(`Error: ${err.message}`)
+                    // We don't throw here as this is not critical for the build process. If the controller doesn't know it'll just remove the job later
+                })
+                .then((res=>{
+                    if(!res || !res.ok){
+                        Logger.debug(`Controller responded with an error for status update of job ID ${JOB_ID}. Status: ${res?.status}`)
+                    }
+                }))
+        }
     }
 
     /*
@@ -174,7 +214,7 @@ export default class Redis {
                 return data as builder_runs
             })
         if(!runObject){
-            Logger.error(`Run object for job ID ${job_id} not found in Redis.`)
+            Logger.warn(`Run object for job ID ${job_id} not found in Redis. This may be normal if the run was already cleaned up already (for example if the build was canceled).`)
             return
         }
         const old_status = runObject.status
@@ -226,9 +266,24 @@ export default class Redis {
             })
             .then((res=>{
                 if(!res || !res.ok){
-                    Logger.error(`Controller responded with an error for status update of job ID ${job_id}. Status: ${res?.status}`)
+                    Logger.debug(`Controller responded with an error for status update of job ID ${job_id}. Status: ${res?.status}, this may be normal depending on the status code`)
                 }
             }))
+    }
 
+    // Cancels a build by job_id
+    public async cancelBuild(job_id:number):Promise<void>{
+        Logger.info(`Cancelling build with Job ID: ${job_id}`)
+        // Get the running builders
+        const runningBuilders = Redis.getRunningBuilders().filter(r => r.job_id == job_id.toString())
+        if(runningBuilders.length === 0 || !runningBuilders[0]){
+            Logger.warn(`No running builder found for Job ID: ${job_id}. It may have already finished or not started yet.`)
+            return
+        }
+        // Stop the container for the running builder
+        const container_id = runningBuilders[0].container_id
+        Logger.info(`Stopping container with ID: ${container_id} for Job ID: ${job_id}`)
+        await DockerWrapper.stopBuilder(container_id)
+        // We do not need to manually remove the job from the running builders list as the dockerStopHandler will handle that
     }
 }

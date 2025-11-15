@@ -20,6 +20,12 @@ export default async function processMessage(message: BuildChannelMessage, node_
         // If the type is queue, we either have a new build or a cancelled build
         if((message.data as BuildQueueMessage).type === "cancel"){
             // Cancelled build - Publish a cancelled message to the build channel
+            // Cancels the build provided, i.e we are going to kill the build if we are building it or remove it from our queue if we are not building it yet
+            const data = message.data as BuildQueueMessage
+            Logger.warn(`Got order to cancel build ${data.job_id}`)
+            // Remove the build from our queue in Redis
+            const redisHelper = new Redis(editor as RedisClientType, node_id);
+            await redisHelper.cancelBuild(parseInt(data.job_id));
         }
         if((message.data as BuildQueueMessage).type === "add"){
             const data = message.data as BuildQueueMessage

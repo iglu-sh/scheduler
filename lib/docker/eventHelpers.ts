@@ -20,7 +20,7 @@ export async function startupHandler(docker:Docker, container_name:string, redis
     }
 
     const container_ip_config = container_inspect_data.NetworkSettings.Networks["iglu-nw"];
-    console.log(container_inspect_data.NetworkSettings)
+
     if(!container_ip_config){
         Logger.error(`Started builder container not connected to iglu-nw ${container_name}`)
         throw new Error(`Failed to inspect container ${container_name}`);
@@ -40,7 +40,10 @@ export async function startupHandler(docker:Docker, container_name:string, redis
     * Startup Logic for a run, this includes sending a buildUpdate on the Redis Build Channel as well as
     * */
 
+
     try{
+        // Call the redis startup handler so we keep track of its id
+        await Redis.dockerStartHandler(run_ID!, builderConfigID.toString(), container_inspect_data.Id)
         // Fetch the builder config from Redis
         const builder_config = await Redis.getBuildConfig(builderConfigID);
 
@@ -80,5 +83,5 @@ export async function startupHandler(docker:Docker, container_name:string, redis
     }
 }
 export async function stopHandler(container_name:string, stop_type:"die"|"stop"){
-    await Redis.dockerStopHandler(container_name, stop_type === 'die' ? "failed" : "success")
+    await Redis.dockerStopHandler(container_name)
 }

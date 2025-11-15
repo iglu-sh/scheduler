@@ -3,6 +3,7 @@ import Docker from "dockerode";
 import Logger from "@iglu-sh/logger";
 import DockerWrapper from "@/lib/docker/dockerWrapper.ts";
 import Redis from "@/lib/redis.ts";
+import type {RedisClientType} from "redis";
 
 /*
 * This file is responsible for starting the Docker container for a given builder config id
@@ -29,7 +30,7 @@ export async function start(builderConfigID:number, run_ID:string,node_id:string
         Logger.error(`Could not start container with id: ${CONTAINER_NAME}, see debug logs for more details`)
         Logger.debug(`Error: ${err}`)
         // Run the Redis Stop handler
-        await Redis.dockerStopHandler(CONTAINER_NAME, "failed")
+        await Redis.dockerStopHandler(CONTAINER_NAME)
     }
     // This then triggers the docker event listener in lib/docker/events.ts which will handle the rest of the process (i.e sending configs, receiving logs, etc.)
 }
