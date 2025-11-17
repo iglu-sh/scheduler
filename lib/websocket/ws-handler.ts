@@ -10,6 +10,7 @@ export async function wsHandler(ip:string, port:string, builderConfig:combinedBu
     // We will try 5 times with a delay of 2 seconds between each try
     let isReachable:boolean = false;
     let retryCount = 0;
+    // TODO: throw error if retry count was exceeded
     while(!isReachable && retryCount < 5){
         try{
             await fetch(`http://${ip}:${port}/api/v1/healthcheck`).then((res)=>{

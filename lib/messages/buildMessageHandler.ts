@@ -37,6 +37,7 @@ export default async function processMessage(message: BuildChannelMessage, node_
             // Get our current arch
             if(arch !== data.arch){
                 Logger.debug(`Not applying for build ${data.job_id} as it is for arch ${data.arch} and we are ${arch}`)
+                return
             }
             Logger.info(`Applying for build ${data.job_id} for arch ${data.arch}`)
             // Get our current queued builds
