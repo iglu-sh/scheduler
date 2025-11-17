@@ -35,8 +35,15 @@ export default async function processMessage(message: BuildChannelMessage, node_
             // Check if we can even build this job
 
             // Get our current arch
-            if(arch !== data.arch){
-                Logger.debug(`Not applying for build ${data.job_id} as it is for arch ${data.arch} and we are ${arch}`)
+            // We need to first look at if cross-compilation is turned on
+            const supportedArchsForCrossCompile = ['x86_64-linux', 'aarch64-linux'];
+            let thisNodeSupports = [arch]
+            if(process.env.CROSS_COMPILE === 'true'){
+                // Add the supported archs for cross compilation
+                thisNodeSupports = supportedArchsForCrossCompile
+            }
+            if(arch !== data.arch && (process.env.CROSS_COMPILE === "true" && !thisNodeSupports.includes(data.arch))){
+                Logger.debug(`Not applying for build ${data.job_id} as it is for arch ${data.arch} and we are ${arch}. You may want to enable cross compilation if you want to build for other architectures.`)
                 return
             }
             Logger.info(`Applying for build ${data.job_id} for arch ${data.arch}`)

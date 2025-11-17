@@ -12,14 +12,7 @@ import DockerWrapper from "@/lib/docker/dockerWrapper.ts";
 const PORT = process.env.PORT || '3000';
 const INTERFACE = process.env.INTERFACE || "127.0.0.1"
 const STARTED_DATE = new Date();
-function isAuthenticated(req:Request):boolean{
-    if(!req.headers.get("Authorization")){
-        return false;
-    }
-    const authHeader = req.headers.get("Authorization") || '';
-    const authToken = authHeader.split(' ')[1];
-    return !(!authToken || authToken !== process.env.AUTH_TOKEN);
-}
+
 let {env, node_id, node_data, arch, node_psk} = await startup().catch((err:Error)=>{
     Logger.error(`Failed to start scheduler: ${err.message}`);
     process.exit(1)
@@ -155,7 +148,6 @@ subscriber.on('connect', async ()=>{
                 sender: node_id,
                 data: healthCheckData
             }
-            console.log(`Health check response: ${JSON.stringify(healthCheckData)}`);
             const returnString = JSON.stringify(returnMessage);
             // Send the health check response back to the controller
             editor.publish('node', returnString);

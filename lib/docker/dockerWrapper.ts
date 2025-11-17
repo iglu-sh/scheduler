@@ -1,7 +1,5 @@
 import Docker from "dockerode";
 import Logger from "@iglu-sh/logger";
-import type {RedisClientType} from "redis";
-import tcpPortUsed from "tcp-port-used";
 
 export default class DockerWrapper{
     private static DockerClient:Docker;
@@ -79,7 +77,14 @@ export default class DockerWrapper{
             return
         }
 
-        DockerWrapper.DockerClient.run(`ghcr.io/iglu-sh/iglu-builder:${release}`, [], [], {Tty: false, name: id, HostConfig:{NetworkMode:'iglu-nw'}, Env: [`LOG_LEVEL=${log_level}`]}, async (err)=>{ if(err){
+        // If we are here, we are not on darwin
+        // In case that cross-compilation is enabled on this node, we need to start the builder privileged
+        let shouldSpawnPrivileged = false
+        if(process.env.CROSS_COMPILE === 'true'){
+            shouldSpawnPrivileged = true
+        }
+        DockerWrapper.DockerClient.run(`ghcr.io/iglu-sh/iglu-builder:${release}`, [], [], {Tty: false, name: id, HostConfig:{NetworkMode:'iglu-nw', Privileged:shouldSpawnPrivileged}, Env: [`LOG_LEVEL=${log_level}`]},
+            async (err)=>{ if(err){
                 Logger.error(`Error starting Docker container for builder config ID ${builderConfigID} (jobID: ${jobID}): ${err.message}`);
                 throw new Error(`Error starting Docker container for builder config ID ${builderConfigID}: ${err.message}`);
             }

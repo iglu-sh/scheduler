@@ -28,7 +28,8 @@ export async function startup(){
         REDIS_USER: z.string().optional().default('default'),
         REDIS_PASSWORD: z.string(),
         REDIS_PORT: z.string().optional().default('6379'),
-        DOCKER_SOCKET: z.string()
+        DOCKER_SOCKET: z.string(),
+        CROSS_COMPILE: z.enum(['true', 'false']).optional().default('false')
     });
     const env = envSchema.safeParse(process.env);
     if (!env.success) {
@@ -36,6 +37,21 @@ export async function startup(){
         throw new Error("Invalid environment variables");
     }
     Logger.setJsonLogging(env.data.LOGGER_FORMAT === 'json')
+    let arch = process.arch.includes('x64') ? `x86_64-${process.platform}` : process.arch
+    if(arch === 'arm64'){
+        arch = `aarch64-${process.platform}`
+    }
+    process.env.ARCH = arch
+    // Check if the CROSS_COMPILE flag is true and if we are on a supported architecture
+    if(env.data.CROSS_COMPILE === 'true'){
+        // Supported architectures are x86_64-linux and aarch64-linux
+        const supportedArchs = ['x86_64-linux', 'aarch64-linux'];
+        if (!supportedArchs.includes(arch)) {
+            Logger.error("CROSS_COMPILE is set to true but the current architecture is not supported / implemented for cross compilation. Supported architectures are x86_64-linux and aarch64-linux. Current architecture: " + arch);
+            throw new Error("CROSS_COMPILE is set to true but the current architecture is not supported / implemented for cross compilation.");
+        }
+    }
+
     Logger.debug("Environment variables are valid");
 
     Logger.setPrefix(process.env.NODE_NAME!, 'MAGENTA')
@@ -43,11 +59,6 @@ export async function startup(){
 
     // Contact the controller to register this node
     Logger.debug("Registering node with controller...");
-    let arch = process.arch.includes('x64') ? `x86_64-${process.platform}` : process.arch
-    console.log(arch)
-    if(arch === 'arm64'){
-        arch = `aarch64-${process.platform}`
-    }
     const registrationBody:nodeRegistrationRequest = {
         node_name: env.data.NODE_NAME,
         node_psk: env.data.AUTH_TOKEN,
