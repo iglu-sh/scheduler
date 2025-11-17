@@ -1,6 +1,7 @@
 import Docker from "dockerode";
 import Logger from "@iglu-sh/logger";
 import type {RedisClientType} from "redis";
+import tcpPortUsed from "tcp-port-used";
 
 export default class DockerWrapper{
     private static DockerClient:Docker;
@@ -50,8 +51,26 @@ export default class DockerWrapper{
         if(process.platform === 'darwin'){
             //TODO: Generate random port here
             Logger.info(`Starting Docker container for builder config ID ${builderConfigID} (jobID: ${jobID}) on Darwin platform`);
-            DockerWrapper.DockerClient.run(`ghcr.io/iglu-sh/iglu-builder:${release}`, [], [], {Tty: false, name: id, HostConfig:{NetworkMode:'iglu-nw', PortBindings: {"3000/tcp": [{"HostPort":"30008", "HostIP": "0.0.0.0"}]}}, Env: [`LOG_LEVEL=${log_level}`]}, async (err)=>{
-                // TODO: This does not throw a catchable error for some reason
+            // Generate a random port for the docker container and check if it's available
+            let portAvailable = false
+            let port = 0
+            while(!portAvailable){
+                port = Math.floor(Math.random() * (40000 - 20000 + 1)) + 20000
+                Logger.debug(`Checking port ${port} for availability`);
+                const usedPorts = containers.flatMap((container)=>{
+                    return Object.values(container.Ports).map((p)=>{
+                        return p.PublicPort
+                    })
+                })
+                if(usedPorts.includes(port)){
+                    Logger.debug(`Port ${port} is already in use by another container, trying another one`);
+                    continue
+                }
+                portAvailable = true
+            }
+            Logger.debug(`Selected port ${port} for container ${id}`);
+
+            DockerWrapper.DockerClient.run(`ghcr.io/iglu-sh/iglu-builder:${release}`, [], [], {Tty: false, name: id, HostConfig:{NetworkMode:'iglu-nw', PortBindings: {"3000/tcp": [{"HostPort":port.toString(), "HostIP": "0.0.0.0"}]}}, Env: [`LOG_LEVEL=${log_level}`]}, async (err)=>{
                 if(err){
                     Logger.error(`Error starting Docker container for builder config ID ${builderConfigID} (jobID: ${jobID}): ${err.message}`);
                     throw new Error(`Error starting Docker container for builder config ID ${builderConfigID}: ${err.message}`);
