@@ -36,7 +36,7 @@ export default async function processMessage(message: BuildChannelMessage, node_
 
             // Get our current arch
             // We need to first look at if cross-compilation is turned on
-            const supportedArchsForCrossCompile = ['x86_64-linux', 'aarch64-linux'];
+            const supportedArchsForCrossCompile:arch[] = ['x86_64-linux', 'aarch64-linux'];
             let thisNodeSupports = [arch]
             if(process.env.CROSS_COMPILE === 'true'){
                 // Add the supported archs for cross compilation
