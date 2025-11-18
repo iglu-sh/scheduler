@@ -29,7 +29,8 @@ export async function startup(){
         REDIS_PASSWORD: z.string(),
         REDIS_PORT: z.string().optional().default('6379'),
         DOCKER_SOCKET: z.string(),
-        CROSS_COMPILE: z.enum(['true', 'false']).optional().default('false')
+        CROSS_COMPILE: z.enum(['true', 'false']).optional().default('false'),
+        DOCKER_IMAGE: z.string().optional().default('ghcr.io/iglu-sh/iglu-builder:latest'),
     });
     const env = envSchema.safeParse(process.env);
     if (!env.success) {

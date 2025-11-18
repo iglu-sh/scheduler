@@ -68,7 +68,7 @@ export default class DockerWrapper{
             }
             Logger.debug(`Selected port ${port} for container ${id}`);
 
-            DockerWrapper.DockerClient.run(`ghcr.io/iglu-sh/iglu-builder:${release}`, [], [], {Tty: false, name: id, HostConfig:{NetworkMode:'iglu-nw', PortBindings: {"3000/tcp": [{"HostPort":port.toString(), "HostIP": "0.0.0.0"}]}}, Env: [`LOG_LEVEL=${log_level}`]}, async (err)=>{
+            DockerWrapper.DockerClient.run(`${process.env.DOCKER_IMAGE}`, [], [], {Tty: false, name: id, HostConfig:{NetworkMode:'iglu-nw', PortBindings: {"3000/tcp": [{"HostPort":port.toString(), "HostIP": "0.0.0.0"}]}}, Env: [`LOG_LEVEL=${log_level}`]}, async (err)=>{
                 if(err){
                     Logger.error(`Error starting Docker container for builder config ID ${builderConfigID} (jobID: ${jobID}): ${err.message}`);
                     throw new Error(`Error starting Docker container for builder config ID ${builderConfigID}: ${err.message}`);

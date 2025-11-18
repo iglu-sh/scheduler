@@ -63,7 +63,7 @@ const DockerClient = new Docker({
 async function pullImg(){
     Logger.info('Pulling image...');
     return new Promise<void>((resolve, reject):void=>{
-        DockerClient.pull('ghcr.io/iglu-sh/iglu-builder:latest', (err:Error, stream:any):void=>{
+        DockerClient.pull(process.env.DOCKER_IMAGE!, (err:Error, stream:any):void=>{
             if(err){
                 Logger.error(`Failed to pull builder image: ${err.message}`);
                 reject(err)
