@@ -9,8 +9,6 @@ import type {BuildChannelMessage, NodeChannelMessage} from "@iglu-sh/types/contr
 import {registerDockerEvents} from "@/lib/docker/events.ts";
 import Redis from "@/lib/redis.ts";
 import DockerWrapper from "@/lib/docker/dockerWrapper.ts";
-const PORT = process.env.PORT || '3000';
-const INTERFACE = process.env.INTERFACE || "127.0.0.1"
 const STARTED_DATE = new Date();
 
 let {env, node_id, node_data, arch, node_psk} = await startup().catch((err:Error)=>{

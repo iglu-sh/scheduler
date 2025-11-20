@@ -25,7 +25,9 @@ REDIS_PORT=6379#The port of the Redis server
 DOCKER_SOCKET=/var/run/docker.sock#The path to the Docker socket, used to communicate with the Docker daemon
 AUTO_PULL_IMG=true#If you'd like the scheduler to try to pull the builder image directly, set this to true, set it to false to not pull the image
 CROSS_COMPILE=false#Set to true if you want to enable cross-compilation support. This will spawn builders as priviliged Docker Containers and is currently only implemented for x86_64-linux and aarch64-linux hosts.
-# Cross-compilation also disables the nix sandboxing environment due to limitations with Docker. See the builder repository and documentation for more details
+# Please see the iglu-sh docs for more information on cross-compilation:
+# https://docs.iglu.sh/Compontents/Builder
+# And also the iglu-sh/builder repository:
 # https://github.com/iglu-sh/builder
 DOCKER_IMAGE=ghcr.io/iglu-sh/iglu-builder:latest
 ```

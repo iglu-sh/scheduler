@@ -54,7 +54,7 @@ export default class Redis {
             builder_id,
             container_id
         })
-        Redis.checkForNewJobs()
+        void Redis.checkForNewJobs()
     }
     // Removes the job with the specified job_id from the running builders list and checks for new jobs
     // Returns a boolean if the job was found and removed
@@ -82,6 +82,10 @@ export default class Redis {
             await Redis.client.json.set(`node:${Redis.node_id}:queued_builds`, '.', new_queue)
         })
     }
+    /*
+    * Checks this node's queued builds in Redis and starts new jobs if possible
+    * @returns {Promise<void>}
+    * */
     public static async checkForNewJobs():Promise<void>{
         Logger.debug("Checking for new jobs...")
         // Check the node:<node_id>:queued_builds list for new jobs and see if we can start any of them
@@ -141,7 +145,7 @@ export default class Redis {
         start(parseInt(builder_config_id), job_id, Redis.node_id).catch((err:Error)=>{
             Logger.error(`Failed to start builder for job ID ${job_id} with builder config ID ${builder_config_id}.`)
             Logger.debug(`Error: ${err.message}`)
-            this.dockerStopHandler(job_id, "failed")
+            this.dockerStopHandler(job_id)
         })
     }
     public static async dockerStartHandler(job_id:string, builder_id:string, container_id:string){
