@@ -40,7 +40,6 @@ export async function startupHandler(docker:Docker, container_name:string, redis
     * Startup Logic for a run, this includes sending a buildUpdate on the Redis Build Channel as well as
     * */
 
-
     try{
         // Call the redis startup handler so we keep track of its id
         await Redis.dockerStartHandler(run_ID!, builderConfigID.toString(), container_inspect_data.Id)
@@ -56,7 +55,6 @@ export async function startupHandler(docker:Docker, container_name:string, redis
             if(!mappedPort || !hostIP){
                 throw new Error(`Failed to get mapped port for container ${container_name}`);
             }
-            console.log(hostIP, mappedPort)
             await wsHandler(
                 "localhost",
                 mappedPort,

@@ -107,6 +107,7 @@ export default async function processMessage(message: BuildChannelMessage, node_
         } as queueEntry).then(()=>{
             Logger.debug(`Builder with ID ${data.job_id} inserted into node queue ${node_id}`)
         })
+
         // Wait a second to ensure the above operation completes before we check for new jobs
         await new Promise(resolve => setTimeout(resolve, 1000));
         await Redis.checkForNewJobs()
