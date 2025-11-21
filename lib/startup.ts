@@ -43,6 +43,7 @@ export async function startup(){
         arch = `aarch64-${process.platform}`
     }
     process.env.ARCH = arch
+    process.env.DOCKER_IMAGE = env.data.DOCKER_IMAGE
     // Check if the CROSS_COMPILE flag is true and if we are on a supported architecture
     if(env.data.CROSS_COMPILE === 'true'){
         // Supported architectures are x86_64-linux and aarch64-linux
