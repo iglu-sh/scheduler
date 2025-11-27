@@ -1,16 +1,23 @@
-{ buildBunApplication }:
+{ bun2nix
+, deadnix
+, nixpkgs-fmt
+}:
 
-buildBunApplication {
+bun2nix.writeBunApplication {
+  packageJson = ../../../package.json;
+
   src = ../../..;
 
-  nodeModuleHash = "sha256-Ru6Nv3hq6V2CN2rXzDdy9O1/CvApINVL3j8WUun3iY8=";
+  bunDeps = bun2nix.fetchBunDeps {
+    bunNix = ./bun.nix;
+  };
 
-  bunScript = "start";
-
-  filesToInstall = [
-    "index.ts"
-    "types"
-    "lib"
-    "tsconfig.json"
+  nativeBuildInputs = [
+    deadnix
+    nixpkgs-fmt
   ];
+
+  dontUseBunBuild = true;
+
+  startScript = "bun run start";
 }
