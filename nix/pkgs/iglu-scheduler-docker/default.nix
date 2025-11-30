@@ -7,11 +7,11 @@
 let
   archType = if (stdenv.hostPlatform.system == "x86_64-linux") then "amd64" else "arm64";
 in
-dockerTools.buildImage {
+dockerTools.buildLayeredImageWithNixDb {
   name = "iglu-scheduler";
   tag = "v${iglu.iglu-scheduler.version}-${archType}";
 
-  copyToRoot = [
+  contents = [
     iglu.iglu-scheduler
     bash
   ];
@@ -20,6 +20,6 @@ dockerTools.buildImage {
     ExposedPorts = {
       "3008/tcp" = { };
     };
-    Cmd = [ "/bin/iglu-cache" ];
+    Cmd = [ "/bin/iglu-scheduler" ];
   };
 }
