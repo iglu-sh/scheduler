@@ -15,7 +15,6 @@ import Redis from "@/lib/redis.ts";
 * */
 export function registerDockerEvents(
     docker:Docker,
-    node_id:string,
     redis: RedisClientType
 ){
     docker.getEvents(async (err, data)=>{
@@ -32,6 +31,11 @@ export function registerDockerEvents(
             Logger.debug(`Docker event stream started`);
         })
         data.on('data', async (message:Buffer)=>{
+            const node_id = process.env.NODE_ID;
+            if(!node_id){
+                Logger.error(`NODE_ID environment variable not set, cannot run docker events safely`);
+                return;
+            }
             // Split the message on newlines to work around multiple json objects being sent at once
             const data = message.toString().trim().split(/\r?\n/);
             for(const msg of data){

@@ -87,7 +87,7 @@ export default class Redis {
     * @returns {Promise<void>}
     * */
     public static async checkForNewJobs():Promise<void>{
-        Logger.debug("Checking for new jobs...")
+        Logger.debug("Checking for new jobs..., Node ID: " + Redis.node_id)
         // Check the node:<node_id>:queued_builds list for new jobs and see if we can start any of them
         // We can only start a new job if we are below the MAX_BUILDS limit
         const max_builds = parseInt(process.env.MAX_BUILDS!)

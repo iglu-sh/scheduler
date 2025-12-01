@@ -179,6 +179,7 @@ subscriber.on('connect', async ()=>{
                     process.env.NODE_ID = newEnv.node_id;
                     process.env.NODE_PSK = newEnv.node_psk;
                     process.env.NODE_DATA = JSON.stringify(node_data);
+                    Redis.node_id = newEnv.node_id;
                     Logger.info(`Scheduler restarted successfully with new NodeID: ${node_id}`);
                 }).catch((err:Error)=>{
                     Logger.error(`Failed to restart scheduler: ${err.message}`);
@@ -217,5 +218,5 @@ await subscriber.connect().catch((err:Error)=>{
     process.exit(1);
 });
 
-registerDockerEvents(DockerClient, node_id, editor as RedisClientType)
+registerDockerEvents(DockerClient, editor as RedisClientType)
 Logger.info(`Scheduler startup complete, listening on redis channels`)
