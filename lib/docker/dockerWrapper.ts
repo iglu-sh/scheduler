@@ -35,6 +35,7 @@ export default class DockerWrapper{
           igluNw.connect({Container: os.hostname()}, (err, data) => {
             if(err){
               Logger.error("Could not connect Scheduler to iglu-nw: " + err)
+              process.exit(1)
             }
           })
         }
