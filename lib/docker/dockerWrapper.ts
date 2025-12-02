@@ -1,5 +1,6 @@
 import Docker from "dockerode";
 import Logger from "@iglu-sh/logger";
+import os from "os";
 
 export default class DockerWrapper{
     private static DockerClient:Docker;
@@ -26,6 +27,17 @@ export default class DockerWrapper{
         }
         else{
             Logger.debug('Docker Network exists, not creating')
+        }
+
+        if (process.env.DOCKER_MODE === "true"){
+          Logger.debug("Running in Container, connection to iglu-nw!")
+          const igluNw = DockerWrapper.DockerClient.getNetwork("iglu-nw")
+          igluNw.connect({Container: os.hostname()}, (err, data) => {
+            if(err){
+              Logger.error("Could not connect Scheduler to iglu-nw: " + err)
+              process.exit(1)
+            }
+          })
         }
     }
     // Starts a builder with the given id
