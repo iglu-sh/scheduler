@@ -31,6 +31,8 @@ export async function startup(){
         DOCKER_SOCKET: z.string(),
         CROSS_COMPILE: z.enum(['true', 'false']).optional().default('false'),
         DOCKER_IMAGE: z.string().optional().default('ghcr.io/iglu-sh/iglu-builder:latest'),
+
+        DOCKER_MODE: z.string().optional().default("false"),
     });
     const env = envSchema.safeParse(process.env);
     if (!env.success) {
