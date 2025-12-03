@@ -26,7 +26,7 @@ export async function startup(){
         CONTROLLER_URL: z.string(), //The base url of the controller (e.g 'http://localhost:3000'). URLs will be constructed from this
         REDIS_HOST: z.string(),
         REDIS_USER: z.string().optional().default('default'),
-        REDIS_PASSWORD: z.string(),
+        REDIS_PASSWORD: z.string().optional().default('default'),
         REDIS_PORT: z.string().optional().default('6379'),
         DOCKER_SOCKET: z.string(),
         CROSS_COMPILE: z.enum(['true', 'false']).optional().default('false'),
