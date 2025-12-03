@@ -32,12 +32,29 @@ export default class DockerWrapper{
         if (process.env.DOCKER_MODE === "true"){
           Logger.debug("Running in Container, connection to iglu-nw!")
           const igluNw = DockerWrapper.DockerClient.getNetwork("iglu-nw")
-          igluNw.connect({Container: os.hostname()}, (err, data) => {
-            if(err){
-              Logger.error("Could not connect Scheduler to iglu-nw: " + err)
-              process.exit(1)
-            }
-          })
+          const schedulerCon = await DockerWrapper.DockerClient.getContainer(os.hostname()).inspect()
+
+          const networks = Object.keys(schedulerCon.NetworkSettings.Networks)
+
+          if(!networks.includes("iglu-nw")){
+          Logger.debug("Connecting Scheduler to iglu-nw")
+            igluNw.connect({Container: os.hostname()}, (err, data) => {
+              if(err){
+                Logger.error("Could not connect Scheduler to iglu-nw: " + err)
+                process.exit(1)
+              }
+            })
+          }
+            Logger.debug("Scheduler is already in iglu-nw")
+          }else{
+            Logger.debug("Connecting Scheduler to iglu-nw")
+            igluNw.connect({Container: os.hostname()}, (err, data) => {
+              if(err){
+                Logger.error("Could not connect Scheduler to iglu-nw: " + err)
+                process.exit(1)
+              }
+            })
+          }
         }
     }
     // Starts a builder with the given id
@@ -80,7 +97,7 @@ export default class DockerWrapper{
             }
             Logger.debug(`Selected port ${port} for container ${id}`);
 
-            DockerWrapper.DockerClient.run(`${process.env.DOCKER_IMAGE}`, [], [], {Tty: false, name: id, HostConfig:{NetworkMode:'iglu-nw', PortBindings: {"3000/tcp": [{"HostPort":port.toString(), "HostIP": "0.0.0.0"}]}}, Env: [`LOG_LEVEL=${log_level}`]}, async (err)=>{
+            DockerWrapper.DockerClient.run(`${process.env.DOCKER_IMAGE}`, [], [], {Tty: false, name: id, HostConfig:{AutoRemove: true, NetworkMode:'iglu-nw', PortBindings: {"3000/tcp": [{"HostPort":port.toString(), "HostIP": "0.0.0.0"}]}}, Env: [`LOG_LEVEL=${log_level}`]}, async (err)=>{
                 if(err){
                     Logger.error(`Error starting Docker container for builder config ID ${builderConfigID} (jobID: ${jobID}): ${err.message}`);
                     throw new Error(`Error starting Docker container for builder config ID ${builderConfigID}: ${err.message}`);
@@ -95,7 +112,7 @@ export default class DockerWrapper{
         if(process.env.CROSS_COMPILE === 'true'){
             shouldSpawnPrivileged = true
         }
-        DockerWrapper.DockerClient.run(`ghcr.io/iglu-sh/iglu-builder:${release}`, [], [], {Tty: false, name: id, HostConfig:{NetworkMode:'iglu-nw', Privileged:shouldSpawnPrivileged}, Env: [`LOG_LEVEL=${log_level}`]},
+        DockerWrapper.DockerClient.run(`ghcr.io/iglu-sh/iglu-builder:${release}`, [], [], {Tty: false, name: id, HostConfig:{AutoRemove: true, NetworkMode:'iglu-nw', Privileged:shouldSpawnPrivileged}, Env: [`LOG_LEVEL=${log_level}`]},
             async (err)=>{ if(err){
                 Logger.error(`Error starting Docker container for builder config ID ${builderConfigID} (jobID: ${jobID}): ${err.message}`);
                 throw new Error(`Error starting Docker container for builder config ID ${builderConfigID}: ${err.message}`);
