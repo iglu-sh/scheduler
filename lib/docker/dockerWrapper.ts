@@ -36,7 +36,15 @@ export default class DockerWrapper{
 
           const networks = Object.keys(schedulerCon.NetworkSettings.Networks)
 
-          if(networks.includes("iglu-nw")){
+          if(!networks.includes("iglu-nw")){
+          Logger.debug("Connecting Scheduler to iglu-nw")
+            igluNw.connect({Container: os.hostname()}, (err, data) => {
+              if(err){
+                Logger.error("Could not connect Scheduler to iglu-nw: " + err)
+                process.exit(1)
+              }
+            })
+          }
             Logger.debug("Scheduler is already in iglu-nw")
           }else{
             Logger.debug("Connecting Scheduler to iglu-nw")
